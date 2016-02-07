@@ -1,0 +1,13 @@
+/.tox
+/MANIFEST
+
+# Various editors
+*~
+
+# Emacs
+\#*\#
+.\#*
+
+
+*.pyc
+__pycache__

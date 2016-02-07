@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export SAGE_ROOT=~/Sage/git
+
+~/Sage/bootstrap/bin/sage-package "$@"
