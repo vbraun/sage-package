@@ -24,11 +24,11 @@ from sage_bootstrap.updater import PackageUpdater
 from sage_bootstrap.compat import urllib
 
 
-class PyPiNotFound(StandardError):
+class PyPiNotFound(Exception):
     pass
 
 
-class PyPiError(StandardError):
+class PyPiError(Exception):
     pass
 
  

@@ -25,6 +25,8 @@ from sage_bootstrap.package import Package
 from sage_bootstrap.tarball import Tarball
 from sage_bootstrap.updater import ChecksumUpdater, PackageUpdater
 from sage_bootstrap.pypi import PyPiVersion, PyPiNotFound
+from sage_bootstrap.fileserver import FileServer
+from sage_bootstrap.expand_class import PackageClass
 
 
 class Application(object):
@@ -42,7 +44,7 @@ class Application(object):
         from sage_bootstrap.config import Configuration
         print(Configuration())
 
-    def list(self):
+    def list_cls(self, package_class):
         """
         Print a list of all available packages
 
@@ -55,8 +57,9 @@ class Application(object):
         zn_poly
         """
         log.debug('Listing packages')
-        for pkg in Package.all():
-            print(pkg.name)
+        pc = PackageClass(package_class)
+        for pkg_name in pc.names:
+            print(pkg_name)
 
     def name(self, tarball_filename):
         """
@@ -135,14 +138,12 @@ class Application(object):
             'iconv', 'patch', 'r', 'configure', 'bliss', 'readline', 'decorator',
             'igraph', 'rw', 'planarity', 'gambit', 
         ]
-        for pkg in Package.all():
-            if pkg.name in exclude:
-                log.debug('skipping %s because of pypi name collision', pkg.name)
+        pc = PackageClass(':standard:')
+        for package_name in pc.names:
+            if package_name in exclude:
+                log.debug('skipping %s because of pypi name collision', package_name)
                 continue
-            if pkg.type != 'standard':
-                log.debug('skipping %s because not a standard package', pkg.name)
-                continue
-            self.update_latest(pkg.name)
+            self.update_latest(package_name)
             
     def download(self, package_name):
         """
@@ -157,6 +158,31 @@ class Application(object):
         package.tarball.download()
         print(package.tarball.upstream_fqn)
 
+    def download_cls(self, package_name_or_class):
+        pc = PackageClass(package_name_or_class)
+        pc.apply(self.download)
+
+    def upload(self, package_name):
+        """
+        Upload a package to the Sage mirror network
+
+        $ sage --package upload pari
+        Uploading /home/vbraun/Code/sage.git/upstream/pari-2.8-2044-g89b0f1e.tar.gz
+        """
+        package = Package(package_name)
+        if not os.path.exists(package.tarball.upstream_fqn):
+            log.debug('Skipping %s because there is no local tarbal', package_name)
+            return
+        log.info('Uploading %s', package.tarball.upstream_fqn)
+        fs = FileServer()
+        fs.upload(package)
+
+    def upload_cls(self, package_name_or_class):
+        pc = PackageClass(package_name_or_class)
+        pc.apply(self.upload)
+        fs = FileServer()
+        fs.publish()
+        
     def fix_all_checksums(self):
         """
         Fix the checksum of a package
