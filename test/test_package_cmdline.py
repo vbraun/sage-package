@@ -105,6 +105,7 @@ class SagePackageTestCase(unittest.TestCase):
         # Prints info to stderr
         self.assertTrue(stderr.startswith('Using cached file'))
 
+    @unittest.skipIf(NO_INTERNET, 'requires internet access')
     def test_update(self):
         pkg = Package('configure')
         # The confball never has a patchlevel since we are upstream...
@@ -117,6 +118,7 @@ class SagePackageTestCase(unittest.TestCase):
         # Prints nothing to stderr
         self.assertEqual(stderr, '')
 
+    @unittest.skipIf(NO_INTERNET, 'requires internet access')
     def test_fix_checksum(self):
         pkg = Package('configure')
         rc, stdout, stderr = self.run_command(EXECUTABLE, 'fix-checksum', 'configure')

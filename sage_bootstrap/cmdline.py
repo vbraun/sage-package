@@ -113,6 +113,16 @@ EXAMPLE:
 """
 
 
+epilog_update_latest = \
+"""
+Update a package to the latest version. This modifies the Sage sources. 
+    
+EXAMPLE:
+
+    $ sage --package update-latest ipython
+"""
+
+
 epilog_download = \
 """
 Download the tarball for a package and print the filename to stdout
@@ -190,6 +200,13 @@ def make_parser():
     parser_update.add_argument(
         '--url', type=str, default=None, help='Download URL')
 
+    parser_update_latest = subparsers.add_parser(
+        'update-latest', epilog=epilog_update_latest,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help='Update a package to the latest version. This modifies the Sage sources.')
+    parser_update_latest.add_argument(
+        'package_name', type=str, help='Package name (:all: for all packages)')
+
     parser_download = subparsers.add_parser(
         'download', epilog=epilog_download,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -232,6 +249,11 @@ def run():
         app.apropos(args.incorrect_name)
     elif args.subcommand == 'update':
         app.update(args.package_name, args.new_version, url=args.url)
+    elif args.subcommand == 'update-latest':
+        if args.package_name == ':all:':
+            app.update_latest_all()
+        else:
+            app.update_latest(args.package_name)
     elif args.subcommand == 'download':
         app.download(args.package_name)
     elif args.subcommand == 'fix-checksum':

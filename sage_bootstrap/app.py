@@ -14,6 +14,7 @@ Controller for the commandline actions
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+
 import os
 import sys
 import logging
@@ -23,7 +24,7 @@ from sage_bootstrap.env import SAGE_DISTFILES
 from sage_bootstrap.package import Package
 from sage_bootstrap.tarball import Tarball
 from sage_bootstrap.updater import ChecksumUpdater, PackageUpdater
-
+from sage_bootstrap.pypi import PyPiVersion, PyPiNotFound
 
 
 class Application(object):
@@ -115,6 +116,34 @@ class Application(object):
             update.download_upstream(url)
         update.fix_checksum()
 
+    def update_latest(self, package_name):
+        """
+        Update a package to the latest version. This modifies the Sage sources. 
+        """
+        try:
+            pypi = PyPiVersion(package_name)
+        except PyPiNotFound:
+            log.debug('%s is not a pypi package', package_name)
+            return
+        else:
+            pypi.update()
+
+    def update_latest_all(self):
+        log.debug('Attempting to update all packages')
+        exclude = [
+            'atlas', 'flint', 'bzip2', 'ecm', 'freetype', 'gap', 'glpk', 'graphs',
+            'iconv', 'patch', 'r', 'configure', 'bliss', 'readline', 'decorator',
+            'igraph', 'rw', 'planarity', 'gambit', 
+        ]
+        for pkg in Package.all():
+            if pkg.name in exclude:
+                log.debug('skipping %s because of pypi name collision', pkg.name)
+                continue
+            if pkg.type != 'standard':
+                log.debug('skipping %s because not a standard package', pkg.name)
+                continue
+            self.update_latest(pkg.name)
+            
     def download(self, package_name):
         """
         Download a package
