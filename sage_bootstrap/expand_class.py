@@ -23,9 +23,13 @@ log = logging.getLogger()
 from sage_bootstrap.package import Package
 
 
+
 class PackageClass(object):
 
     def __init__(self, package_name_or_class):
+        """
+        Classes of packages, e.g. ``:standard:`` for all standard packages
+        """
         if package_name_or_class == ':all:':
             self._init_all()
         elif package_name_or_class == ':standard:':
@@ -61,3 +65,24 @@ class PackageClass(object):
     def apply(self, function, *args, **kwds):
         for package_name in self.names:
             function(package_name, *args, **kwds)
+
+
+
+class MultiplePackages(object):
+
+    def __init__(self, package_or_class_list):
+        """
+        Expand a list of packages and package classes into a single list
+        of duplicate-free package names
+        """
+        self._pkgs = map(PackageClass, package_or_class_list)
+        names = set()
+        for pkgcls in self._pkgs:
+            names.update(pkgcls.names)
+        self.names = sorted(names)
+        log.debug('Expanded packages to %s', self.names)
+        
+    def apply(self, function, *args, **kwds):
+        for package_name in self.names:
+            function(package_name, *args, **kwds)
+    

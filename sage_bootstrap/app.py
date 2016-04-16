@@ -14,6 +14,7 @@ Controller for the commandline actions
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from __future__ import print_function
 
 import os
 import sys
@@ -26,7 +27,7 @@ from sage_bootstrap.tarball import Tarball
 from sage_bootstrap.updater import ChecksumUpdater, PackageUpdater
 from sage_bootstrap.pypi import PyPiVersion, PyPiNotFound
 from sage_bootstrap.fileserver import FileServer
-from sage_bootstrap.expand_class import PackageClass
+from sage_bootstrap.expand_class import MultiplePackages, PackageClass
 
 
 class Application(object):
@@ -44,7 +45,7 @@ class Application(object):
         from sage_bootstrap.config import Configuration
         print(Configuration())
 
-    def list_cls(self, package_class):
+    def list_multi(self, package_or_class_list):
         """
         Print a list of all available packages
 
@@ -57,9 +58,8 @@ class Application(object):
         zn_poly
         """
         log.debug('Listing packages')
-        pc = PackageClass(package_class)
-        for pkg_name in pc.names:
-            print(pkg_name)
+        pc = MultiplePackages(*package_or_class_list)
+        pc.apply(print)
 
     def name(self, tarball_filename):
         """
@@ -158,11 +158,11 @@ class Application(object):
         package.tarball.download()
         print(package.tarball.upstream_fqn)
 
-    def download_cls(self, package_name_or_class):
-        pc = PackageClass(package_name_or_class)
+    def download_multi(self, package_name_or_class):
+        pc = MultiplePackages(package_name_or_class)
         pc.apply(self.download)
 
-    def upload(self, package_name):
+    def upload(self, package_name, publish=False):
         """
         Upload a package to the Sage mirror network
 
@@ -176,9 +176,11 @@ class Application(object):
         log.info('Uploading %s', package.tarball.upstream_fqn)
         fs = FileServer()
         fs.upload(package)
-
-    def upload_cls(self, package_name_or_class):
-        pc = PackageClass(package_name_or_class)
+        if publish:        
+            fs.publish()
+        
+    def upload_multi(self, package_name_or_class):
+        pc = MultiplePackages(package_name_or_class)
         pc.apply(self.upload)
         fs = FileServer()
         fs.publish()
@@ -216,4 +218,6 @@ class Application(object):
             print('Updating checksum of {0}'.format(pkg.tarball_filename))
             update.fix_checksum()
         
-        
+    def fix_checksum_multi(self, package_name_or_class):
+        pc = MultiplePackages(package_name_or_class)
+        pc.apply(self.fix_checksum)

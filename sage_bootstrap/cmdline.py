@@ -187,8 +187,8 @@ def make_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help='Print a list of all available packages')
     parser_list.add_argument(
-        'package_class',
-        type=str, default=':all:', nargs='?',
+        'package_or_class_list',
+        type=str, default=':all:', nargs='+',
         help='Package class like :all: (default) or :standard:')
 
     parser_name = subparsers.add_parser(
@@ -234,21 +234,21 @@ def make_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help='Download tarball')
     parser_download.add_argument(
-        'package_name', type=str, help='Package name or :type:')
+        'package_or_class_list', type=str, nargs='+', help='Package name(s) or :type:')
     
     parser_upload = subparsers.add_parser(
         'upload', epilog=epilog_upload,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help='Upload tarball to Sage mirrors')
     parser_upload.add_argument(
-        'package_name', type=str, help='Package name or :type:')
+        'package_or_class_list', type=str, nargs='+', help='Package name(s) or :type:')
     
     parser_fix_checksum = subparsers.add_parser(
         'fix-checksum', epilog=epilog_fix_checksum,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         help='Fix the checksum of package.')
     parser_fix_checksum.add_argument(
-        'package_name', nargs='?', default=None, type=str,
+        'package_or_class_list', nargs='+', type=str,
         help='Package name. Default: fix all packages.')
     
     return parser
@@ -269,7 +269,7 @@ def run():
     if args.subcommand == 'config':
         app.config()
     elif args.subcommand == 'list':
-        app.list_cls(args.package_class)
+        app.list_multi(args.package_or_class_list)
     elif args.subcommand == 'name':
         app.name(args.tarball_filename)
     elif args.subcommand == 'tarball':
@@ -284,14 +284,11 @@ def run():
         else:
             app.update_latest(args.package_name)
     elif args.subcommand == 'download':
-        app.download_cls(args.package_name)
+        app.download_multi(args.package_or_class_list)
     elif args.subcommand == 'upload':
-        app.upload_cls(args.package_name)
+        app.upload_multi(args.package_or_class_list)
     elif args.subcommand == 'fix-checksum':
-        if args.package_name is None:
-            app.fix_all_checksums()
-        else:
-            app.fix_checksum(args.package_name)
+        app.fix_checksum_multi(args.package_or_class_list)
     else:
         raise RuntimeError('unknown subcommand: {0}'.format(args))
 

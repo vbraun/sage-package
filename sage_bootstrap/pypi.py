@@ -40,7 +40,8 @@ class PyPiVersion(object):
 
     def _get_json(self):
         response = urllib.urlopen(self.json_url)
-        if response.getcode() != 200:    
+        if response.getcode() != 200:
+            log.error('not found: %s', self.json_url)
             raise PyPiNotFound('%s not on pypi', self.name)
         data = response.read()
         text = data.decode('utf-8')
@@ -65,6 +66,7 @@ class PyPiVersion(object):
         for download in self.json['urls']:
             if download['python_version'] == 'source':
                 return download['url']
+        log.debug('source url not found in json response: %s', self.json['urls'])
         raise PyPiError('No source url for %s found', self.name)
             
     def update(self):
@@ -73,6 +75,12 @@ class PyPiVersion(object):
             log.info('%s is already at the latest version', self.name)
             return
         log.info('Updating %s: %s -> %s', self.name, package.version, self.version)
-        update = PackageUpdater(self.name, self.version)
-        update.download_upstream(self.url)
-        update.fix_checksum()
+        try:
+            source_url = self.url
+        except PyPiError as error:
+            # Sometimes there is no source tarball listed for latest version
+            log.info(error)
+        else:
+            update = PackageUpdater(self.name, self.version)
+            update.download_upstream(source_url)
+            update.fix_checksum()
