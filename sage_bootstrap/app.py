@@ -171,8 +171,7 @@ class Application(object):
         """
         package = Package(package_name)
         if not os.path.exists(package.tarball.upstream_fqn):
-            log.debug('Skipping %s because there is no local tarbal', package_name)
-            return
+            raise RuntimeError('no local tarball for {}'.format(package_name))
         log.info('Uploading %s', package.tarball.upstream_fqn)
         fs = FileServer()
         fs.upload(package)

@@ -25,14 +25,14 @@ class FileServer(object):
 
     def __init__(self):
         self.user = 'sagemath'
-        self.hostname = 'fileserver.sagemath.org'
+        self.hostname = 'k8s-ssh.sagemath.org'
 
     def upstream_directory(self, package):
         """
         Return the directory where the tarball resides on the server
         """
         return os.path.join(
-            '/', 'data', 'files', 'spkg', 'upstream', package.name,
+            '/', 'home', 'files', 'files', 'spkg', 'upstream', package.name,
         )
 
     def upload(self, package):
@@ -40,13 +40,13 @@ class FileServer(object):
         Upload the current tarball of package
         """
         subprocess.check_call([
-            'ssh', 'sagemath@fileserver.sagemath.org',
+            'ssh', 'files@{}'.format(self.hostname),
             'mkdir -p {0} && touch {0}/index.html'.format(self.upstream_directory(package))
         ])
         subprocess.check_call([
-            'rsync', '-av', '--checksum', '-e', 'ssh -l sagemath',
+            'rsync', '-av', '--checksum', '-e', 'ssh -l files',
             package.tarball.upstream_fqn,
-            'fileserver.sagemath.org:{0}'.format(self.upstream_directory(package))
+            '{0}:{1}'.format(self.hostname, self.upstream_directory(package))
         ])
 
     def publish(self):
@@ -54,5 +54,5 @@ class FileServer(object):
         Publish the files
         """
         subprocess.check_call([
-            'ssh', 'sagemath@fileserver.sagemath.org', './publish-files.sh'
+            'ssh', 'files@{}'.format(self.hostname), './publish-files.sh'
         ])
