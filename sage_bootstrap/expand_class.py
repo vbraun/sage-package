@@ -70,7 +70,7 @@ class PackageClass(object):
 
 class MultiplePackages(object):
 
-    def __init__(self, package_or_class_list):
+    def __init__(self, package_or_class_list, ignore_errors=False):
         """
         Expand a list of packages and package classes into a single list
         of duplicate-free package names
@@ -80,9 +80,14 @@ class MultiplePackages(object):
         for pkgcls in self._pkgs:
             names.update(pkgcls.names)
         self.names = sorted(names)
+        self._ignore_errors = ignore_errors
         log.debug('Expanded packages to %s', self.names)
         
     def apply(self, function, *args, **kwds):
         for package_name in self.names:
-            function(package_name, *args, **kwds)
-    
+            try:
+                function(package_name, *args, **kwds)
+            except Exception as error:
+                if not self._ignore_errors:
+                    raise
+                log.warn('an error occurred, ignoring: {}'.format(error))

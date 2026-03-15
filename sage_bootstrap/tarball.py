@@ -113,6 +113,10 @@ class Tarball(object):
                 algorithm.update(buf)
         return algorithm.hexdigest()
 
+    def _compute_sha256(self):
+        import hashlib
+        return self._compute_hash(hashlib.sha256())
+
     def _compute_sha1(self):
         import hashlib
         return self._compute_hash(hashlib.sha1())
@@ -129,8 +133,8 @@ class Tarball(object):
         """
         Test whether the checksum of the downloaded file is correct.
         """
-        sha1 = self._compute_sha1()
-        return sha1 == self.package.sha1
+        sha1 = self._compute_sha256()
+        return sha1 == self.package.sha256
 
     def download(self):
         """

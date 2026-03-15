@@ -27,6 +27,7 @@ from sage_bootstrap.tarball import Tarball
 from sage_bootstrap.updater import ChecksumUpdater, PackageUpdater
 from sage_bootstrap.pypi import PyPiVersion, PyPiNotFound
 from sage_bootstrap.fileserver import FileServer
+from sage_bootstrap.sagepad_org import SagepadOrg
 from sage_bootstrap.expand_class import MultiplePackages, PackageClass
 
 
@@ -173,13 +174,15 @@ class Application(object):
         if not os.path.exists(package.tarball.upstream_fqn):
             raise RuntimeError('no local tarball for {}'.format(package_name))
         log.info('Uploading %s', package.tarball.upstream_fqn)
+        sp = SagepadOrg()
+        sp.upload(package)
         fs = FileServer()
         fs.upload(package)
         if publish:        
             fs.publish()
         
     def upload_multi(self, package_name_or_class):
-        pc = MultiplePackages(package_name_or_class)
+        pc = MultiplePackages(package_name_or_class, ignore_errors=True)
         pc.apply(self.upload)
         fs = FileServer()
         fs.publish()

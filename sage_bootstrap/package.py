@@ -66,19 +66,6 @@ class Package(object):
         return self.__name
 
     @property
-    def md5(self):
-        """
-        Return the MD5 checksum
-        
-        Do not use, this is ancient! Use :meth:`sha1` instead.
-
-        OUTPUT:
-
-        String.
-        """
-        return self.__md5
-
-    @property
     def sha1(self):
         """
         Return the SHA1 checksum
@@ -90,17 +77,15 @@ class Package(object):
         return self.__sha1
 
     @property
-    def cksum(self):
+    def sha256(self):
         """
-        Return the Ck sum checksum
-        
-        Do not use, this is ancient! Use :meth:`sha1` instead.
+        Return the SHA1 checksum
 
         OUTPUT:
 
         String.
         """
-        return self.__cksum
+        return self.__sha256
 
     @property
     def tarball(self):
@@ -146,8 +131,12 @@ class Package(object):
 
         String. The full-qualified tarball filename.
         """
-        return self.tarball_pattern.replace('VERSION', self.version)
-
+        pattern = self.tarball_pattern
+        if pattern:
+            return self._substitute_variables(pattern)
+        else:
+            return None
+    
     @property
     def version(self):
         """
@@ -161,6 +150,39 @@ class Package(object):
         return self.__version
 
     @property
+    def version_major(self):
+        """
+        Return the major version
+
+        OUTPUT:
+
+        String. The package's major version.
+        """
+        return self.version.split('.')[0]
+
+    @property
+    def version_minor(self):
+        """
+        Return the minor version
+
+        OUTPUT:
+
+        String. The package's minor version.
+        """
+        return self.version.split('.')[1]
+
+    @property
+    def version_micro(self):
+        """
+        Return the micro version
+
+        OUTPUT:
+
+        String. The package's micro version.
+        """
+        return self.version.split('.')[2]
+    
+    @property
     def patchlevel(self):
         """
         Return the patchlevel
@@ -172,6 +194,42 @@ class Package(object):
         """
         return self.__patchlevel
 
+    def _substitute_variables_once(self, pattern):
+        """
+        Substitute (at most) one occurrence of variables in ``pattern`` by the values.
+
+        These variables are ``VERSION``, ``VERSION_MAJOR``, ``VERSION_MINOR``,
+        ``VERSION_MICRO``, either appearing like this or in the form ``${VERSION_MAJOR}``
+        etc.
+
+        Return a tuple:
+        - the string with the substitution done or the original string
+        - whether a substitution was done
+        """
+        for var in ('VERSION_MAJOR', 'VERSION_MINOR', 'VERSION_MICRO', 'VERSION'):
+            # As VERSION is a substring of the other three, it needs to be tested last.
+            dollar_brace_var = '${' + var + '}'
+            if dollar_brace_var in pattern:
+                value = getattr(self, var.lower())
+                return pattern.replace(dollar_brace_var, value, 1), True
+            elif var in pattern:
+                value = getattr(self, var.lower())
+                return pattern.replace(var, value, 1), True
+        return pattern, False
+
+    def _substitute_variables(self, pattern):
+        """
+        Substitute all occurrences of ``VERSION`` in ``pattern`` by the actual version.
+
+        Likewise for ``VERSION_MAJOR``, ``VERSION_MINOR``, ``VERSION_MICRO``,
+        either appearing like this or in the form ``${VERSION}``, ``${VERSION_MAJOR}``,
+        etc.
+        """
+        not_done = True
+        while not_done:
+            pattern, not_done = self._substitute_variables_once(pattern)
+        return pattern
+    
     @property
     def type(self):
         """
@@ -220,12 +278,11 @@ class Package(object):
                     continue
                 var, value = match.groups()
                 result[var] = value
-        self.__md5 = result['md5']
-        self.__sha1 = result['sha1']
-        self.__cksum = result['cksum']
+        self.__sha1 = result.get('sha1')
+        self.__sha256 = result['sha256']
         self.__tarball_pattern = result['tarball']
         
-    VERSION_PATCHLEVEL = re.compile('(?P<version>.*)\.p(?P<patchlevel>[0-9]+)')
+    VERSION_PATCHLEVEL = re.compile(r'(?P<version>.*)\.p(?P<patchlevel>[0-9]+)')
     
     def _init_version(self):
         with open(os.path.join(self.path, 'package-version.txt')) as f:
